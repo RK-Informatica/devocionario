@@ -1,41 +1,47 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [repeatPassword, setRepeatPassword] = useState("")
-  const [inviteCode, setInviteCode] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
 
     if (password !== repeatPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
     }
 
     if (!inviteCode.trim()) {
-      setError("Invite code is required")
-      setIsLoading(false)
-      return
+      setError("Invite code is required");
+      setIsLoading(false);
+      return;
     }
 
     try {
@@ -45,26 +51,26 @@ export default function SignUpPage() {
         .select("*")
         .eq("code", inviteCode.trim())
         .eq("is_active", true)
-        .single()
+        .single();
 
       if (codeError || !code) {
-        setError("Invalid invite code")
-        setIsLoading(false)
-        return
+        setError("Invalid invite code");
+        setIsLoading(false);
+        return;
       }
 
       // Check if code has expired
       if (code.expires_at && new Date(code.expires_at) < new Date()) {
-        setError("Invite code has expired")
-        setIsLoading(false)
-        return
+        setError("Invite code has expired");
+        setIsLoading(false);
+        return;
       }
 
       // Check if code has reached max uses
       if (code.max_uses && code.used_count >= code.max_uses) {
-        setError("Invite code has reached maximum uses")
-        setIsLoading(false)
-        return
+        setError("Invite code has reached maximum uses");
+        setIsLoading(false);
+        return;
       }
 
       // Create account
@@ -72,24 +78,26 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/editor`,
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+            `${window.location.origin}/editor`,
         },
-      })
-      if (signUpError) throw signUpError
+      });
+      if (signUpError) throw signUpError;
 
       // Increment invite code usage
       await supabase
         .from("invite_codes")
         .update({ used_count: code.used_count + 1 })
-        .eq("id", code.id)
+        .eq("id", code.id);
 
-      router.push("/auth/sign-up-success")
+      router.push("/auth/sign-up-success");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -151,7 +159,10 @@ export default function SignUpPage() {
               </div>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-primary underline underline-offset-4">
+                <Link
+                  href="/auth/login"
+                  className="text-primary underline underline-offset-4"
+                >
                   Login
                 </Link>
               </div>
@@ -160,5 +171,5 @@ export default function SignUpPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
